@@ -55,6 +55,13 @@ struct MerchantDetailSheet: View {
             }
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button {
+                        dismiss()
+                    } label: {
+                        Image(systemName: "xmark")
+                    }
+                }
                 ToolbarItem(placement: .destructiveAction) {
                     Button {
                         showDeleteConfirmation = true
@@ -62,14 +69,14 @@ struct MerchantDetailSheet: View {
                         Image(systemName: "trash")
                     }
                     .tint(.red)
+                    .confirmationDialog("Remove this merchant?", isPresented: $showDeleteConfirmation, titleVisibility: .visible) {
+                        Button("Remove", role: .destructive) {
+                            modelContext.delete(merchant)
+                            dismiss()
+                        }
+                        Button("Cancel", role: .cancel) {}
+                    }
                 }
-            }
-            .confirmationDialog("Remove this merchant?", isPresented: $showDeleteConfirmation, titleVisibility: .visible) {
-                Button("Remove", role: .destructive) {
-                    modelContext.delete(merchant)
-                    dismiss()
-                }
-                Button("Cancel", role: .cancel) {}
             }
         }
         .presentationDetents([.height(170)])

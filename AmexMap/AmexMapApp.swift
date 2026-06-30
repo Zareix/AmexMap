@@ -1,25 +1,23 @@
-//
-//  AmexMapApp.swift
-//  AmexMap
-//
-//  Created by Raphaël Catarino on 30/06/2026.
-//
-
-import SwiftUI
 import SwiftData
+import SwiftUI
 
 @main
 struct AmexMapApp: App {
     var sharedModelContainer: ModelContainer = {
-        let schema = Schema([
-            Item.self,
-        ])
-        let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
-
+        let schema = Schema([Merchant.self])
+        #if targetEnvironment(simulator)
+        let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
+        #else
+        let config = ModelConfiguration(
+            schema: schema,
+            isStoredInMemoryOnly: false,
+            cloudKitDatabase: .private("iCloud.com.raphaelgc.AmexMap")
+        )
+        #endif
         do {
-            return try ModelContainer(for: schema, configurations: [modelConfiguration])
+            return try ModelContainer(for: schema, configurations: [config])
         } catch {
-            fatalError("Could not create ModelContainer: \(error)")
+            fatalError("Could not create ModelContainer: \(error.localizedDescription)")
         }
     }()
 

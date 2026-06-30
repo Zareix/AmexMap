@@ -2,18 +2,14 @@ import SwiftData
 import SwiftUI
 
 @main
-struct AmexMapApp: App {
+struct iAmexMapApp: App {
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([Merchant.self])
-        #if targetEnvironment(simulator)
-        let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
-        #else
         let config = ModelConfiguration(
             schema: schema,
             isStoredInMemoryOnly: false,
-            cloudKitDatabase: .private("iCloud.com.raphaelgc.AmexMap")
+            cloudKitDatabase: .private("iCloud.com.raphaelgc.iAmexMap")
         )
-        #endif
         do {
             return try ModelContainer(for: schema, configurations: [config])
         } catch {

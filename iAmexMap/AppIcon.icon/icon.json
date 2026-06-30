@@ -1,0 +1,64 @@
+{
+  "fill" : {
+    "automatic-gradient" : "display-p3:0.00392,0.43137,0.81176,1.00000"
+  },
+  "groups" : [
+    {
+      "layers" : [
+        {
+          "fill" : {
+            "solid" : "extended-gray:1.00000,1.00000"
+          },
+          "image-name" : "creditcard-bold.svg",
+          "name" : "creditcard-bold",
+          "position" : {
+            "scale" : 6,
+            "translation-in-points" : [
+              -287.757344460483,
+              -270.7621951176113
+            ]
+          }
+        },
+        {
+          "fill" : {
+            "solid" : "extended-gray:1.00000,1.00000"
+          },
+          "image-name" : "checkmark-bold.svg",
+          "name" : "checkmark-bold",
+          "position" : {
+            "scale" : 5,
+            "translation-in-points" : [
+              305.57661123286607,
+              270.8690423411622
+            ]
+          }
+        },
+        {
+          "fill" : {
+            "solid" : "display-p3:1.00000,1.00000,1.00000,1.00000"
+          },
+          "image-name" : "map.fill-bold.svg",
+          "name" : "map.fill-bold",
+          "position" : {
+            "scale" : 29,
+            "translation-in-points" : [
+              15.470198986905302,
+              0
+            ]
+          }
+        }
+      ],
+      "shadow" : {
+        "kind" : "neutral",
+        "opacity" : 0.5
+      },
+      "translucency" : {
+        "enabled" : true,
+        "value" : 0.5
+      }
+    }
+  ],
+  "supported-platforms" : {
+    "squares" : "shared"
+  }
+}

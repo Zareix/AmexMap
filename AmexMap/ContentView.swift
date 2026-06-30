@@ -31,6 +31,12 @@ struct ContentView: View {
                             .background(merchant.annotationColor, in: Circle())
                             .shadow(color: .black.opacity(0.25), radius: 4, y: 2)
                             .frame(width: 32, height: 32)
+                            .overlay(alignment: .topTrailing) {
+                                Image(systemName: merchant.isAccepted ? "checkmark.circle.fill" : "xmark.circle.fill")
+                                    .font(.system(size: 12, weight: .bold))
+                                    .foregroundStyle(.white, merchant.isAccepted ? .green : .red)
+                                    .offset(x: 4, y: -4)
+                            }
                     }
                 }
                 .annotationTitles(.hidden)

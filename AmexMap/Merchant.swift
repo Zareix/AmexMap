@@ -9,6 +9,7 @@ final class Merchant {
     var latitude: Double = 0
     var longitude: Double = 0
     var pointOfInterestCategory: String?
+    var isAccepted: Bool = true
 
     var coordinate: CLLocationCoordinate2D {
         CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
@@ -24,11 +25,12 @@ final class Merchant {
         return MKPointOfInterestCategory(rawValue: raw).annotationColor
     }
 
-    init(identifier: String, latitude: Double, longitude: Double, category: String? = nil) {
+    init(identifier: String, latitude: Double, longitude: Double, category: String? = nil, isAccepted: Bool = true) {
         self.mapItemIdentifier = identifier
         self.latitude = latitude
         self.longitude = longitude
         self.pointOfInterestCategory = category
+        self.isAccepted = isAccepted
     }
 }
 
@@ -72,7 +74,10 @@ extension MKPointOfInterestCategory {
         case .marina: return "sailboat.fill"
         case .zoo: return "pawprint.fill"
         case .beach: return "sun.max.fill"
-        default: return "mappin.fill"
+        case .musicVenue: return "music.note"
+        default:
+            print("[Merchant] sfSymbol: unhandled category '\(rawValue)'")
+            return "mappin"
         }
     }
 
@@ -92,7 +97,7 @@ extension MKPointOfInterestCategory {
             return .indigo
         case .fitnessCenter, .spa:
             return .teal
-        case .theater, .movieTheater, .nightlife, .brewery, .winery, .distillery:
+        case .theater, .movieTheater, .nightlife, .brewery, .winery, .distillery, .musicVenue:
             return .pink
         case .museum, .library:
             return .brown
@@ -109,6 +114,7 @@ extension MKPointOfInterestCategory {
         case .zoo:
             return .green
         default:
+            print("[Merchant] annotationColor: unhandled category '\(rawValue)'")
             return .red
         }
     }

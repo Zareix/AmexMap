@@ -8,7 +8,6 @@ struct SelectedFeature: Identifiable {
 }
 
 struct ContentView: View {
-    @Environment(\.modelContext) private var modelContext
     @Query private var merchants: [Merchant]
 
     @State private var cameraPosition: MapCameraPosition = .userLocation(fallback: .automatic)
@@ -31,6 +30,7 @@ struct ContentView: View {
                             .padding(8)
                             .background(merchant.annotationColor, in: Circle())
                             .shadow(color: .black.opacity(0.25), radius: 4, y: 2)
+                            .frame(width: 32, height: 32)
                     }
                 }
                 .annotationTitles(.hidden)
@@ -56,25 +56,17 @@ struct ContentView: View {
                 } label: {
                     Image(systemName: "location.fill")
                         .font(.system(size: 20))
-                        .foregroundStyle(.blue)
+                        .foregroundStyle(.primary)
                         .frame(width: 50, height: 54)
                 }
             }
-            .background(.regularMaterial, in: Capsule())
+            .background(.ultraThinMaterial, in: Capsule())
             .shadow(color: .black.opacity(0.15), radius: 8, y: 4)
             .padding(.bottom, 40)
             .padding(.trailing, 16)
         }
         .sheet(isPresented: $showSearch) {
-            SearchMerchantSheet { identifier, coordinate, category in
-                let merchant = Merchant(
-                    identifier: identifier,
-                    latitude: coordinate.latitude,
-                    longitude: coordinate.longitude,
-                    category: category
-                )
-                modelContext.insert(merchant)
-            }
+            SearchMerchantSheet()
         }
         .onChange(of: selectedFeature) {
             guard let feature = selectedFeature else { return }
@@ -82,15 +74,7 @@ struct ContentView: View {
             pendingFeature = SelectedFeature(feature: feature)
         }
         .sheet(item: $pendingFeature) { selected in
-            AddMerchantSheet(feature: selected.feature) { identifier, coordinate, category in
-                let merchant = Merchant(
-                    identifier: identifier,
-                    latitude: coordinate.latitude,
-                    longitude: coordinate.longitude,
-                    category: category
-                )
-                modelContext.insert(merchant)
-            }
+            AddMerchantSheet(feature: selected.feature)
         }
         .sheet(item: $selectedMerchant) { merchant in
             MerchantDetailSheet(merchant: merchant)

@@ -1,60 +1,91 @@
-import SwiftUI
 import MapKit
+import SwiftData
+import SwiftUI
 
 struct AddMerchantSheet: View {
     let feature: MapFeature
-    let onSave: (String, CLLocationCoordinate2D, String?) -> Void
 
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) private var modelContext
     @State private var merchantName: String?
+    @State private var isAccepted = true
     @State private var fetchedData: (identifier: String, coordinate: CLLocationCoordinate2D, category: String?)?
 
     var body: some View {
-        VStack(spacing: 24) {
-            if let data = fetchedData {
-                Image(systemName: MKPointOfInterestCategory(rawValue: data.category ?? "").sfSymbol)
-                    .font(.largeTitle)
-                    .foregroundStyle(MKPointOfInterestCategory(rawValue: data.category ?? "").annotationColor)
-            } else {
-                Image(systemName: "mappin.fill")
-                    .font(.largeTitle)
-                    .foregroundStyle(.secondary)
-            }
-
-            if let name = merchantName {
-                Text(name)
-                    .font(.headline)
-                    .multilineTextAlignment(.center)
-            } else {
-                ProgressView()
-                    .padding(.vertical, 4)
-            }
-
-            HStack(spacing: 12) {
-                Button("Cancel", role: .cancel) {
-                    dismiss()
-                }
-                .buttonStyle(.bordered)
-                .controlSize(.large)
-
-                Button("Add Merchant") {
+        NavigationStack {
+            VStack(spacing: 0) {
+                HStack(spacing: 14) {
                     if let data = fetchedData {
-                        onSave(data.identifier, data.coordinate, data.category)
+                        Image(systemName: MKPointOfInterestCategory(rawValue: data.category ?? "").sfSymbol)
+                            .font(.title2)
+                            .foregroundStyle(.white)
+                            .padding(8)
+                            .frame(width: 40, height: 40)
+                            .background(MKPointOfInterestCategory(rawValue: data.category ?? "").annotationColor, in: RoundedRectangle(cornerRadius: 10))
+                    } else {
+                        ProgressView()
+                            .frame(width: 44, height: 44)
                     }
-                    dismiss()
+
+                    if let name = merchantName {
+                        Text(name)
+                            .font(.headline)
+                    } else {
+                        Text("Loading…")
+                            .foregroundStyle(.secondary)
+                    }
+
+                    Spacer()
                 }
-                .buttonStyle(.borderedProminent)
-                .controlSize(.large)
+                .padding(.horizontal)
+                .padding(.vertical, 14)
+
+                Divider()
+
+                Picker("", selection: $isAccepted) {
+                    Label("Accepted", systemImage: "checkmark.circle.fill").tag(true)
+                    Label("Not accepted", systemImage: "xmark.circle.fill").tag(false)
+                }
+                .pickerStyle(.segmented)
                 .disabled(fetchedData == nil)
+                .padding(.horizontal)
+                .padding(.vertical, 14)
+            }
+            .navigationTitle("Add Merchant")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button { dismiss() } label: {
+                        Image(systemName: "xmark")
+                    }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button {
+                        if let data = fetchedData {
+                            modelContext.insert(Merchant(
+                                identifier: data.identifier,
+                                latitude: data.coordinate.latitude,
+                                longitude: data.coordinate.longitude,
+                                category: data.category,
+                                isAccepted: isAccepted
+                            ))
+                        }
+                        dismiss()
+                    } label: {
+                        Image(systemName: "checkmark")
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .disabled(fetchedData == nil)
+                }
             }
         }
-        .padding(24)
-        .presentationDetents([.height(220)])
+        .presentationDetents([.height(170)])
         .presentationDragIndicator(.visible)
         .task {
             let request = MKMapItemRequest(feature: feature)
             guard let item = try? await request.mapItem,
-                  let identifier = item.identifier?.rawValue else {
+                  let identifier = item.identifier?.rawValue
+            else {
                 merchantName = "No identifier available"
                 return
             }

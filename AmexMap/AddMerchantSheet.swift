@@ -3,13 +3,18 @@ import SwiftData
 import SwiftUI
 
 struct AddMerchantSheet: View {
-    let feature: MapFeature
+    enum Source {
+        case feature(MapFeature)
+        case item(MKMapItem)
+    }
+
+    let source: Source
 
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @State private var merchantName: String?
     @State private var isAccepted = true
-    @State private var fetchedData: (identifier: String, coordinate: CLLocationCoordinate2D, category: String?)?
+    @State private var fetchedData: (identifier: String, address: String, coordinate: CLLocationCoordinate2D, category: String?)?
 
     var body: some View {
         NavigationStack {
@@ -64,6 +69,8 @@ struct AddMerchantSheet: View {
                         if let data = fetchedData {
                             modelContext.insert(Merchant(
                                 identifier: data.identifier,
+                                name: merchantName ?? "",
+                                address: data.address,
                                 latitude: data.coordinate.latitude,
                                 longitude: data.coordinate.longitude,
                                 category: data.category,
@@ -82,15 +89,24 @@ struct AddMerchantSheet: View {
         .presentationDetents([.height(170)])
         .presentationDragIndicator(.visible)
         .task {
-            let request = MKMapItemRequest(feature: feature)
-            guard let item = try? await request.mapItem,
-                  let identifier = item.identifier?.rawValue
-            else {
+            let item: MKMapItem?
+            switch source {
+            case .feature(let feature):
+                item = try? await MKMapItemRequest(feature: feature).mapItem
+            case .item(let mapItem):
+                item = mapItem
+            }
+            guard let item, let identifier = item.identifier?.rawValue else {
                 merchantName = "No identifier available"
                 return
             }
             merchantName = item.name ?? "Unknown Merchant"
-            fetchedData = (identifier: identifier, coordinate: item.location.coordinate, category: item.pointOfInterestCategory?.rawValue)
+            fetchedData = (
+                identifier: identifier,
+                address: item.address?.shortAddress ?? item.address?.fullAddress ?? "",
+                coordinate: item.location.coordinate,
+                category: item.pointOfInterestCategory?.rawValue
+            )
         }
     }
 }

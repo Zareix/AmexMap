@@ -7,37 +7,107 @@ private struct PendingItem: Identifiable {
     let item: MKMapItem
 }
 
+private struct MerchantRow: View {
+    let symbol: String
+    let color: Color
+    let name: String
+    var subtitle: String? = nil
+    var badge: (systemImage: String, color: Color)? = nil
+
+    var body: some View {
+        HStack(spacing: 6) {
+            Image(systemName: symbol)
+                .font(.callout)
+                .foregroundStyle(.white)
+                .padding(8)
+                .frame(width: 40, height: 40)
+                .background(color, in: RoundedRectangle(cornerRadius: 8))
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(name)
+                    .font(.headline)
+                    .foregroundStyle(.primary)
+                if let subtitle {
+                    Text(subtitle)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            Spacer()
+
+            if let badge {
+                Image(systemName: badge.systemImage)
+                    .foregroundStyle(badge.color)
+            }
+        }
+        .padding(.vertical, 2)
+    }
+}
+
 struct SearchMerchantSheet: View {
+    var onSelectSaved: ((Merchant) -> Void)?
+
     @Environment(\.dismiss) private var dismiss
+    @Query private var savedMerchants: [Merchant]
     @State private var query = ""
     @State private var results: [MKMapItem] = []
     @State private var isSearching = false
     @State private var pendingItem: PendingItem?
 
+    var filteredSaved: [Merchant] {
+        guard !query.isEmpty else { return savedMerchants }
+        return savedMerchants.filter { $0.name.localizedCaseInsensitiveContains(query) }
+    }
+
     var body: some View {
         NavigationStack {
-            List(results, id: \.self) { item in
-                Button {
-                    pendingItem = PendingItem(item: item)
-                } label: {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(item.name ?? "Unknown")
-                            .font(.headline)
-                            .foregroundStyle(.primary)
-                        if let address = item.address?.shortAddress ?? item.address?.fullAddress {
-                            Text(address)
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
+            List {
+                if !filteredSaved.isEmpty {
+                    Section("Saved") {
+                        ForEach(filteredSaved) { merchant in
+                            Button {
+                                dismiss()
+                                onSelectSaved?(merchant)
+                            } label: {
+                                MerchantRow(
+                                    symbol: merchant.annotationSymbol,
+                                    color: merchant.annotationColor,
+                                    name: merchant.name.isEmpty ? "Unknown" : merchant.name,
+                                    subtitle: merchant.address.isEmpty ? nil : merchant.address,
+                                    badge: (
+                                        systemImage: merchant.isAccepted ? "checkmark.circle.fill" : "xmark.circle.fill",
+                                        color: merchant.isAccepted ? .green : .red
+                                    )
+                                )
+                            }
                         }
                     }
-                    .padding(.vertical, 2)
+                }
+
+                if !results.isEmpty {
+                    Section("Results") {
+                        ForEach(results, id: \.self) { item in
+                            Button {
+                                pendingItem = PendingItem(item: item)
+                            } label: {
+                                let category = MKPointOfInterestCategory(rawValue: item.pointOfInterestCategory?.rawValue ?? "")
+                                MerchantRow(
+                                    symbol: category.sfSymbol,
+                                    color: category.annotationColor,
+                                    name: item.name ?? "Unknown",
+                                    subtitle: item.address?.shortAddress ?? item.address?.fullAddress
+                                )
+                            }
+                        }
+                    }
                 }
             }
-            .listStyle(.plain)
+            .listStyle(.insetGrouped)
             .overlay {
                 if isSearching {
                     ProgressView()
-                } else if results.isEmpty && !query.isEmpty {
+                } else if results.isEmpty && filteredSaved.isEmpty && !query.isEmpty {
                     ContentUnavailableView.search(text: query)
                 }
             }
@@ -52,7 +122,7 @@ struct SearchMerchantSheet: View {
                     await search()
                 }
             }
-            .navigationTitle("Add Merchant")
+            .navigationTitle("Merchants")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -60,7 +130,7 @@ struct SearchMerchantSheet: View {
                 }
             }
             .sheet(item: $pendingItem) { pending in
-                ConfirmSearchMerchantSheet(item: pending.item, onAdded: { dismiss() })
+                AddMerchantSheet(source: .item(pending.item))
             }
         }
     }
@@ -72,58 +142,5 @@ struct SearchMerchantSheet: View {
         request.resultTypes = .pointOfInterest
         results = (try? await MKLocalSearch(request: request).start())?.mapItems ?? []
         isSearching = false
-    }
-}
-
-private struct ConfirmSearchMerchantSheet: View {
-    let item: MKMapItem
-    let onAdded: () -> Void
-
-    @Environment(\.dismiss) private var dismiss
-    @Environment(\.modelContext) private var modelContext
-    @State private var isAccepted = true
-
-    var body: some View {
-        VStack(spacing: 20) {
-            Image(systemName: MKPointOfInterestCategory(rawValue: item.pointOfInterestCategory?.rawValue ?? "").sfSymbol)
-                .font(.largeTitle)
-                .foregroundStyle(MKPointOfInterestCategory(rawValue: item.pointOfInterestCategory?.rawValue ?? "").annotationColor)
-
-            Text(item.name ?? "Unknown Merchant")
-                .font(.headline)
-                .multilineTextAlignment(.center)
-
-            Picker("", selection: $isAccepted) {
-                Label("Accepted", systemImage: "checkmark.circle.fill").tag(true)
-                Label("Not accepted", systemImage: "xmark.circle.fill").tag(false)
-            }
-            .pickerStyle(.segmented)
-
-            HStack(spacing: 12) {
-                Button("Cancel", role: .cancel) {
-                    dismiss()
-                }
-                .buttonStyle(.bordered)
-                .controlSize(.large)
-
-                Button("Add Merchant") {
-                    guard let id = item.identifier?.rawValue else { return }
-                    modelContext.insert(Merchant(
-                        identifier: id,
-                        latitude: item.location.coordinate.latitude,
-                        longitude: item.location.coordinate.longitude,
-                        category: item.pointOfInterestCategory?.rawValue,
-                        isAccepted: isAccepted
-                    ))
-                    dismiss()
-                    onAdded()
-                }
-                .buttonStyle(.borderedProminent)
-                .controlSize(.large)
-            }
-        }
-        .padding(24)
-        .presentationDetents([.height(260)])
-        .presentationDragIndicator(.visible)
     }
 }

@@ -51,7 +51,7 @@ struct ContentView: View {
                 Button {
                     showSearch = true
                 } label: {
-                    Image(systemName: "plus")
+                    Image(systemName: "magnifyingglass")
                         .font(.system(size: 20, weight: .medium))
                         .foregroundStyle(.primary)
                         .frame(width: 50, height: 54)
@@ -72,7 +72,9 @@ struct ContentView: View {
             .padding(.trailing, 16)
         }
         .sheet(isPresented: $showSearch) {
-            SearchMerchantSheet()
+            SearchMerchantSheet(onSelectSaved: { merchant in
+                selectedMerchant = merchant
+            })
         }
         .onChange(of: selectedFeature) {
             guard let feature = selectedFeature else { return }
@@ -80,7 +82,7 @@ struct ContentView: View {
             pendingFeature = SelectedFeature(feature: feature)
         }
         .sheet(item: $pendingFeature) { selected in
-            AddMerchantSheet(feature: selected.feature)
+            AddMerchantSheet(source: .feature(selected.feature))
         }
         .sheet(item: $selectedMerchant) { merchant in
             MerchantDetailSheet(merchant: merchant)

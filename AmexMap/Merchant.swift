@@ -6,6 +6,8 @@ import SwiftUI
 @Model
 final class Merchant {
     var mapItemIdentifier: String = ""
+    var name: String = ""
+    var address: String = ""
     var latitude: Double = 0
     var longitude: Double = 0
     var pointOfInterestCategory: String?
@@ -25,8 +27,10 @@ final class Merchant {
         return MKPointOfInterestCategory(rawValue: raw).annotationColor
     }
 
-    init(identifier: String, latitude: Double, longitude: Double, category: String? = nil, isAccepted: Bool = true) {
+    init(identifier: String, name: String, address: String = "", latitude: Double, longitude: Double, category: String? = nil, isAccepted: Bool = true) {
         self.mapItemIdentifier = identifier
+        self.name = name
+        self.address = address
         self.latitude = latitude
         self.longitude = longitude
         self.pointOfInterestCategory = category
@@ -83,11 +87,11 @@ extension MKPointOfInterestCategory {
 
     var annotationColor: Color {
         switch self {
-        case .bakery, .cafe, .restaurant, .foodMarket, .store, .beauty:
+        case .bakery, .cafe, .restaurant, .foodMarket, .beauty:
             return .orange
         case .pharmacy, .hospital, .fireStation:
             return .red
-        case .gasStation:
+        case .gasStation, .store:
             return .yellow
         case .parking:
             return .blue

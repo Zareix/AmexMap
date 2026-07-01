@@ -111,7 +111,7 @@ struct SearchMerchantSheet: View {
                     ContentUnavailableView.search(text: query)
                 }
             }
-            .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .always), prompt: "Search merchants")
+            .searchable(text: $query, placement: .toolbar, prompt: "Search merchants")
             .onSubmit(of: .search) {
                 Task { await search() }
             }
@@ -122,17 +122,15 @@ struct SearchMerchantSheet: View {
                     await search()
                 }
             }
-            .navigationTitle("Merchants")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
-                }
-            }
             .sheet(item: $pendingItem) { pending in
                 AddMerchantSheet(source: .item(pending.item))
             }
         }
+        .padding(.top, 8)
+        .presentationDetents([.height(70), .height(350), .large])
+        .presentationBackgroundInteraction(.enabled)
+        .presentationDragIndicator(.hidden)
+        .interactiveDismissDisabled()
     }
 
     private func search() async {
@@ -143,4 +141,14 @@ struct SearchMerchantSheet: View {
         results = (try? await MKLocalSearch(request: request).start())?.mapItems ?? []
         isSearching = false
     }
+}
+
+#Preview {
+    @Previewable @State var showSheet = true
+    Color.clear
+        .ignoresSafeArea()
+        .sheet(isPresented: $showSheet) {
+            SearchMerchantSheet()
+        }
+        .modelContainer(for: Merchant.self, inMemory: true)
 }

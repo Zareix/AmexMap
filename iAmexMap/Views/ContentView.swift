@@ -15,7 +15,10 @@ struct ContentView: View {
     @State private var pendingFeature: SelectedFeature?
     @State private var selectedMerchant: Merchant?
     @State private var locationManager = CLLocationManager()
-    @State private var showSearch = false
+
+    @State private var showSearch = true
+    @State private var searchSheetDetent: PresentationDetent = .height(80)
+    @State private var searchSheetHeight: CGFloat = 0
 
     var body: some View {
         Map(position: $cameraPosition, selection: $selectedFeature) {
@@ -47,45 +50,38 @@ struct ContentView: View {
             locationManager.requestWhenInUseAuthorization()
         }
         .overlay(alignment: .bottomTrailing) {
-            VStack(spacing: 0) {
-                Button {
-                    showSearch = true
-                } label: {
-                    Image(systemName: "magnifyingglass")
-                        .font(.system(size: 20, weight: .medium))
-                        .foregroundStyle(.primary)
-                        .frame(width: 50, height: 54)
-                }
-
-                Button {
-                    cameraPosition = .userLocation(fallback: .automatic)
-                } label: {
-                    Image(systemName: "location.fill")
-                        .font(.system(size: 20))
-                        .foregroundStyle(.primary)
-                        .frame(width: 50, height: 54)
-                }
+            Button {
+                cameraPosition = .userLocation(fallback: .automatic)
+            } label: {
+                Image(systemName: "location.fill")
+                    .font(.system(size: 20))
+                    .foregroundStyle(.primary)
+                    .padding(12)
             }
-            .background(.ultraThinMaterial, in: Capsule())
-            .shadow(color: .black.opacity(0.15), radius: 8, y: 4)
-            .padding(.bottom, 40)
+            .glassEffect()
             .padding(.trailing, 16)
-        }
-        .sheet(isPresented: $showSearch) {
-            SearchMerchantSheet(onSelectSaved: { merchant in
-                selectedMerchant = merchant
-            })
+            .offset(y: -searchSheetHeight)
         }
         .onChange(of: selectedFeature) {
             guard let feature = selectedFeature else { return }
             selectedFeature = nil
             pendingFeature = SelectedFeature(feature: feature)
         }
-        .sheet(item: $pendingFeature) { selected in
-            AddMerchantSheet(source: .feature(selected.feature))
-        }
-        .sheet(item: $selectedMerchant) { merchant in
-            MerchantDetailSheet(merchant: merchant)
+        .sheet(isPresented: $showSearch) {
+            SearchMerchantSheet(onSelectSaved: { merchant in
+                selectedMerchant = merchant
+            })
+            .onGeometryChange(for: CGFloat.self) {
+                max(min($0.size.height, 350), 0)
+            } action: { _, newValue in
+                searchSheetHeight = min(newValue, 300)
+            }
+            .sheet(item: $pendingFeature) { selected in
+                AddMerchantSheet(source: .feature(selected.feature))
+            }
+            .sheet(item: $selectedMerchant) { merchant in
+                MerchantDetailSheet(merchant: merchant)
+            }
         }
     }
 }

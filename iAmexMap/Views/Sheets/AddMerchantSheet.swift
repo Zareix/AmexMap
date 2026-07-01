@@ -19,17 +19,13 @@ struct AddMerchantSheet: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                HStack(spacing: 14) {
+                HStack(spacing: 10) {
                     if let data = fetchedData {
-                        Image(systemName: MKPointOfInterestCategory(rawValue: data.category ?? "").sfSymbol)
-                            .font(.title2)
-                            .foregroundStyle(.white)
-                            .padding(8)
-                            .frame(width: 40, height: 40)
-                            .background(MKPointOfInterestCategory(rawValue: data.category ?? "").annotationColor, in: RoundedRectangle(cornerRadius: 10))
+                        let category = MKPointOfInterestCategory(rawValue: data.category ?? "")
+                        MerchantIcon(symbol: category.sfSymbol, color: category.annotationColor)
                     } else {
                         ProgressView()
-                            .frame(width: 44, height: 44)
+                            .frame(width: 40, height: 40)
                     }
 
                     if let name = merchantName {
@@ -67,15 +63,28 @@ struct AddMerchantSheet: View {
                 ToolbarItem(placement: .confirmationAction) {
                     Button {
                         if let data = fetchedData {
-                            modelContext.insert(Merchant(
-                                identifier: data.identifier,
-                                name: merchantName ?? "",
-                                address: data.address,
-                                latitude: data.coordinate.latitude,
-                                longitude: data.coordinate.longitude,
-                                category: data.category,
-                                isAccepted: isAccepted
-                            ))
+                            let identifier = data.identifier
+                            let descriptor = FetchDescriptor<Merchant>(
+                                predicate: #Predicate { $0.mapItemIdentifier == identifier }
+                            )
+                            if let existing = try? modelContext.fetch(descriptor).first {
+                                existing.name = merchantName ?? ""
+                                existing.address = data.address
+                                existing.latitude = data.coordinate.latitude
+                                existing.longitude = data.coordinate.longitude
+                                existing.pointOfInterestCategory = data.category
+                                existing.isAccepted = isAccepted
+                            } else {
+                                modelContext.insert(Merchant(
+                                    identifier: data.identifier,
+                                    name: merchantName ?? "",
+                                    address: data.address,
+                                    latitude: data.coordinate.latitude,
+                                    longitude: data.coordinate.longitude,
+                                    category: data.category,
+                                    isAccepted: isAccepted
+                                ))
+                            }
                         }
                         dismiss()
                     } label: {
@@ -87,7 +96,8 @@ struct AddMerchantSheet: View {
             }
         }
         .presentationDetents([.height(170)])
-        .presentationDragIndicator(.visible)
+        .presentationDragIndicator(.hidden)
+        .presentationCompactAdaptation(.none)
         .task {
             let item: MKMapItem?
             switch source {
@@ -109,4 +119,28 @@ struct AddMerchantSheet: View {
             )
         }
     }
+}
+
+// MARK: - Preview
+
+private extension AddMerchantSheet {
+    init(preview: Void) {
+        self.source = .item(MKMapItem())
+        self._merchantName = State(initialValue: "Starbucks")
+        self._isAccepted = State(initialValue: true)
+        self._fetchedData = State(initialValue: (
+            identifier: "IA1EC51379DD1EE4F",
+            address: "3 Boulevard des Capucines, Paris",
+            coordinate: CLLocationCoordinate2D(latitude: 48.8706383, longitude: 2.3310375),
+            category: MKPointOfInterestCategory.cafe.rawValue
+        ))
+    }
+}
+
+#Preview {
+    Color.clear
+        .sheet(isPresented: .constant(true)) {
+            AddMerchantSheet(preview: ())
+        }
+        .modelContainer(for: Merchant.self, inMemory: true)
 }

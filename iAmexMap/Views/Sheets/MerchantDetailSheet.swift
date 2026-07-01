@@ -14,13 +14,8 @@ struct MerchantDetailSheet: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                HStack(spacing: 14) {
-                    Image(systemName: merchant.annotationSymbol)
-                        .font(.title2)
-                        .foregroundStyle(.white)
-                        .padding(8)
-                        .frame(width: 40, height: 40)
-                        .background(merchant.annotationColor, in: RoundedRectangle(cornerRadius: 10))
+                HStack(spacing: 12) {
+                    MerchantIcon(symbol: merchant.annotationSymbol, color: merchant.annotationColor)
 
                     if isLoading {
                         ProgressView()
@@ -81,6 +76,7 @@ struct MerchantDetailSheet: View {
         }
         .presentationDetents([.height(170)])
         .presentationDragIndicator(.visible)
+        .presentationCompactAdaptation(.none)
         .task {
             let id = MKMapItem.Identifier(rawValue: merchant.mapItemIdentifier)
             guard let id = id else { return }
@@ -89,4 +85,15 @@ struct MerchantDetailSheet: View {
             isLoading = false
         }
     }
+}
+
+#Preview {
+    let container = try! ModelContainer(for: Merchant.self, configurations: ModelConfiguration(isStoredInMemoryOnly: true))
+    let merchant = Merchant(identifier: "IA1EC51379DD1EE4F", name: "Starbucks", address: "3 Boulevard des Capucines, Paris", latitude: 48.8706383, longitude: 2.3310375, category: MKPointOfInterestCategory.cafe.rawValue, isAccepted: true)
+    container.mainContext.insert(merchant)
+    return Color.clear
+        .sheet(isPresented: .constant(true)) {
+            MerchantDetailSheet(merchant: merchant)
+        }
+        .modelContainer(container)
 }

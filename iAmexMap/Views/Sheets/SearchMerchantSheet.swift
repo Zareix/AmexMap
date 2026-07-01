@@ -16,12 +16,7 @@ private struct MerchantRow: View {
 
     var body: some View {
         HStack(spacing: 6) {
-            Image(systemName: symbol)
-                .font(.callout)
-                .foregroundStyle(.white)
-                .padding(8)
-                .frame(width: 40, height: 40)
-                .background(color, in: RoundedRectangle(cornerRadius: 8))
+            MerchantIcon(symbol: symbol, color: color)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(name)
@@ -31,6 +26,8 @@ private struct MerchantRow: View {
                     Text(subtitle)
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                        .truncationMode(.tail)
                 }
             }
 
@@ -48,16 +45,23 @@ private struct MerchantRow: View {
 struct SearchMerchantSheet: View {
     var onSelectSaved: ((Merchant) -> Void)?
 
-    @Environment(\.dismiss) private var dismiss
     @Query private var savedMerchants: [Merchant]
     @State private var query = ""
     @State private var results: [MKMapItem] = []
     @State private var isSearching = false
     @State private var pendingItem: PendingItem?
+    @State private var selectedDetent: PresentationDetent = .height(70)
+    @State private var locationManager = CLLocationManager()
 
     var filteredSaved: [Merchant] {
-        guard !query.isEmpty else { return savedMerchants }
-        return savedMerchants.filter { $0.name.localizedCaseInsensitiveContains(query) }
+        let base = query.isEmpty
+            ? Array(savedMerchants)
+            : savedMerchants.filter { $0.name.localizedCaseInsensitiveContains(query) }
+        guard let userLocation = locationManager.location else { return base }
+        return base.sorted {
+            CLLocation(latitude: $0.latitude, longitude: $0.longitude).distance(from: userLocation)
+                < CLLocation(latitude: $1.latitude, longitude: $1.longitude).distance(from: userLocation)
+        }
     }
 
     var body: some View {
@@ -67,7 +71,6 @@ struct SearchMerchantSheet: View {
                     Section("Saved") {
                         ForEach(filteredSaved) { merchant in
                             Button {
-                                dismiss()
                                 onSelectSaved?(merchant)
                             } label: {
                                 MerchantRow(
@@ -104,6 +107,8 @@ struct SearchMerchantSheet: View {
                 }
             }
             .listStyle(.insetGrouped)
+            .scrollContentBackground(.hidden)
+            .toolbarBackground(.hidden, for: .navigationBar)
             .overlay {
                 if isSearching {
                     ProgressView()
@@ -116,7 +121,12 @@ struct SearchMerchantSheet: View {
                 Task { await search() }
             }
             .onChange(of: query) {
-                guard !query.isEmpty else { results = []; return }
+                guard !query.isEmpty else {
+                    results = []
+                    selectedDetent = .height(70)
+                    return
+                }
+                selectedDetent = .large
                 Task {
                     try? await Task.sleep(for: .milliseconds(400))
                     await search()
@@ -125,9 +135,12 @@ struct SearchMerchantSheet: View {
             .sheet(item: $pendingItem) { pending in
                 AddMerchantSheet(source: .item(pending.item))
             }
+            .navigationBarBackButtonHidden(true)
+            .navigationBarHidden(true)
         }
-        .padding(.top, 8)
-        .presentationDetents([.height(70), .height(350), .large])
+        .padding(.top, 10)
+        .presentationDetents([.height(70), .height(350), .large], selection: $selectedDetent)
+        .presentationCompactAdaptation(.none)
         .presentationBackgroundInteraction(.enabled)
         .presentationDragIndicator(.hidden)
         .interactiveDismissDisabled()
@@ -145,7 +158,7 @@ struct SearchMerchantSheet: View {
 
 #Preview {
     @Previewable @State var showSheet = true
-    Color.clear
+    Color.pink
         .ignoresSafeArea()
         .sheet(isPresented: $showSheet) {
             SearchMerchantSheet()

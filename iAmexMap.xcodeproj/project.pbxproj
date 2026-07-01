@@ -153,6 +153,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = iAmexMap/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "iAmex Map";
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.shopping";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "iAmexMap uses your location to center the map near you.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -164,7 +165,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.1;
+				MARKETING_VERSION = 1.2;
 				PRODUCT_BUNDLE_IDENTIFIER = com.raphaelgc.iAmexMap;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -193,6 +194,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = iAmexMap/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "iAmex Map";
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.shopping";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "iAmexMap uses your location to center the map near you.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -204,7 +206,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.1;
+				MARKETING_VERSION = 1.2;
 				PRODUCT_BUNDLE_IDENTIFIER = com.raphaelgc.iAmexMap;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";

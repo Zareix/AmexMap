@@ -28,12 +28,7 @@ struct ContentView: View {
                     Button {
                         selectedMerchant = merchant
                     } label: {
-                        Image(systemName: merchant.annotationSymbol)
-                            .foregroundStyle(.white)
-                            .padding(8)
-                            .background(merchant.annotationColor, in: Circle())
-                            .shadow(color: .black.opacity(0.25), radius: 4, y: 2)
-                            .frame(width: 32, height: 32)
+                        MerchantIcon(symbol: merchant.annotationSymbol, color: merchant.annotationColor, size: 28)
                             .overlay(alignment: .topTrailing) {
                                 Image(systemName: merchant.isAccepted ? "checkmark.circle.fill" : "xmark.circle.fill")
                                     .font(.system(size: 12, weight: .bold))
@@ -61,6 +56,16 @@ struct ContentView: View {
             .glassEffect()
             .padding(.trailing, 16)
             .offset(y: -searchSheetHeight)
+        }
+        .onChange(of: selectedMerchant) {
+            guard let merchant = selectedMerchant else { return }
+            withAnimation {
+                cameraPosition = .region(MKCoordinateRegion(
+                    center: merchant.coordinate,
+                    latitudinalMeters: 500,
+                    longitudinalMeters: 500
+                ))
+            }
         }
         .onChange(of: selectedFeature) {
             guard let feature = selectedFeature else { return }

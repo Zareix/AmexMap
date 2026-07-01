@@ -18,7 +18,7 @@ final class Merchant {
     }
 
     var annotationSymbol: String {
-        guard let raw = pointOfInterestCategory else { return "mappin.fill" }
+        guard let raw = pointOfInterestCategory else { return "mappin" }
         return MKPointOfInterestCategory(rawValue: raw).sfSymbol
     }
 
@@ -79,8 +79,12 @@ extension MKPointOfInterestCategory {
         case .zoo: return "pawprint.fill"
         case .beach: return "sun.max.fill"
         case .musicVenue: return "music.note"
+        case .landmark: return "star.fill"
+        case .castle: return "building.columns.fill"
         default:
-            print("[Merchant] sfSymbol: unhandled category '\(rawValue)'")
+            if !rawValue.isEmpty {
+                print("[Merchant] sfSymbol: unhandled category '\(rawValue)'")
+            }
             return "mappin"
         }
     }
@@ -103,8 +107,10 @@ extension MKPointOfInterestCategory {
             return .teal
         case .theater, .movieTheater, .nightlife, .brewery, .winery, .distillery, .musicVenue:
             return .pink
-        case .museum, .library:
+        case .museum, .library, .castle:
             return .brown
+        case .landmark:
+            return .purple
         case .school, .university:
             return .blue
         case .park, .nationalPark, .beach:
@@ -118,8 +124,10 @@ extension MKPointOfInterestCategory {
         case .zoo:
             return .green
         default:
-            print("[Merchant] annotationColor: unhandled category '\(rawValue)'")
-            return .red
+            if !rawValue.isEmpty {
+                print("[Merchant] annotationColor: unhandled category '\(rawValue)'")
+            }
+            return .gray
         }
     }
 }

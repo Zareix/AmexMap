@@ -13,6 +13,11 @@ final class Merchant {
     var pointOfInterestCategory: String?
     var isAccepted: Bool = true
 
+    // MARK: CloudKit System Fields (auto-populated)
+    var modifiedBy: String?    // lastModifiedUserRecordID
+    var createdAt: Date?       // creationDate
+    var updatedAt: Date?       // modificationDate
+
     var coordinate: CLLocationCoordinate2D {
         CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
     }

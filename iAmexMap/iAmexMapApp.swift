@@ -8,7 +8,7 @@ struct iAmexMapApp: App {
         let config = ModelConfiguration(
             schema: schema,
             isStoredInMemoryOnly: false,
-            cloudKitDatabase: .private("iCloud.com.raphaelgc.iAmexMap")
+            cloudKitDatabase: .public("iCloud.com.raphaelgc.iAmexMap")
         )
         do {
             return try ModelContainer(for: schema, configurations: [config])

@@ -1,5 +1,4 @@
 import MapKit
-import SwiftData
 import SwiftUI
 
 struct SelectedFeature: Identifiable {
@@ -8,7 +7,7 @@ struct SelectedFeature: Identifiable {
 }
 
 struct ContentView: View {
-    @Query private var merchants: [Merchant]
+    @Environment(MerchantStore.self) private var store
 
     @State private var cameraPosition: MapCameraPosition = .userLocation(fallback: .automatic)
     @State private var selectedFeature: MapFeature?
@@ -17,13 +16,13 @@ struct ContentView: View {
     @State private var locationManager = CLLocationManager()
 
     @State private var showSearch = true
-    @State private var searchSheetDetent: PresentationDetent = .height(80)
+    @State private var searchSheetDetent: PresentationDetent = .height(70)
     @State private var searchSheetHeight: CGFloat = 0
 
     var body: some View {
         Map(position: $cameraPosition, selection: $selectedFeature) {
             UserAnnotation()
-            ForEach(merchants) { merchant in
+            ForEach(store.merchants) { merchant in
                 Annotation("", coordinate: merchant.coordinate) {
                     Button {
                         selectedMerchant = merchant
@@ -43,6 +42,9 @@ struct ContentView: View {
         .ignoresSafeArea()
         .onAppear {
             locationManager.requestWhenInUseAuthorization()
+        }
+        .task {
+            await store.fetchAll()
         }
         .overlay(alignment: .bottomTrailing) {
             Button {
@@ -93,5 +95,5 @@ struct ContentView: View {
 
 #Preview {
     ContentView()
-        .modelContainer(for: Merchant.self, inMemory: true)
+        .environment(MerchantStore.preview())
 }

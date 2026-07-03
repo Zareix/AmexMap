@@ -1,12 +1,11 @@
 import MapKit
-import SwiftData
 import SwiftUI
 
 struct MerchantDetailSheet: View {
     @Bindable var merchant: Merchant
 
     @Environment(\.dismiss) private var dismiss
-    @Environment(\.modelContext) private var modelContext
+    @Environment(MerchantStore.self) private var store
     @State private var mapItem: MKMapItem?
     @State private var isLoading = true
     @State private var showDeleteConfirmation = false
@@ -45,6 +44,9 @@ struct MerchantDetailSheet: View {
                     )
                     .foregroundStyle(merchant.isAccepted ? .green : .red)
                 }
+                .onChange(of: merchant.isAccepted) { _, _ in
+                    Task { await store.save(merchant) }
+                }
                 .padding(.horizontal)
                 .padding(.vertical, 14)
             }
@@ -66,8 +68,12 @@ struct MerchantDetailSheet: View {
                     .tint(.red)
                     .confirmationDialog("Remove this merchant?", isPresented: $showDeleteConfirmation, titleVisibility: .visible) {
                         Button("Remove", role: .destructive) {
-                            modelContext.delete(merchant)
-                            dismiss()
+                            Task {
+                                await store.delete(merchant)
+                                if store.lastErrorMessage == nil {
+                                    dismiss()
+                                }
+                            }
                         }
                         Button("Cancel", role: .cancel) {}
                     }
@@ -77,6 +83,14 @@ struct MerchantDetailSheet: View {
         .presentationDetents([.height(170)])
         .presentationDragIndicator(.visible)
         .presentationCompactAdaptation(.none)
+        .alert("Something went wrong", isPresented: Binding(
+            get: { store.lastErrorMessage != nil },
+            set: { if !$0 { store.lastErrorMessage = nil } }
+        )) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(store.lastErrorMessage ?? "")
+        }
         .task {
             let id = MKMapItem.Identifier(rawValue: merchant.mapItemIdentifier)
             guard let id = id else { return }
@@ -88,12 +102,10 @@ struct MerchantDetailSheet: View {
 }
 
 #Preview {
-    let container = try! ModelContainer(for: Merchant.self, configurations: ModelConfiguration(isStoredInMemoryOnly: true))
     let merchant = Merchant(identifier: "IA1EC51379DD1EE4F", name: "Starbucks", address: "3 Boulevard des Capucines, Paris", latitude: 48.8706383, longitude: 2.3310375, category: MKPointOfInterestCategory.cafe.rawValue, isAccepted: true)
-    container.mainContext.insert(merchant)
     return Color.clear
         .sheet(isPresented: .constant(true)) {
             MerchantDetailSheet(merchant: merchant)
         }
-        .modelContainer(container)
+        .environment(MerchantStore.preview())
 }

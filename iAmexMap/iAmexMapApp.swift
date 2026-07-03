@@ -1,26 +1,13 @@
-import SwiftData
 import SwiftUI
 
 @main
 struct iAmexMapApp: App {
-    var sharedModelContainer: ModelContainer = {
-        let schema = Schema([Merchant.self])
-        let config = ModelConfiguration(
-            schema: schema,
-            isStoredInMemoryOnly: false,
-            cloudKitDatabase: .private("iCloud.com.raphaelgc.iAmexMap")
-        )
-        do {
-            return try ModelContainer(for: schema, configurations: [config])
-        } catch {
-            fatalError("Could not create ModelContainer: \(error.localizedDescription)")
-        }
-    }()
+    @State private var merchantStore = MerchantStore()
 
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .environment(merchantStore)
         }
-        .modelContainer(sharedModelContainer)
     }
 }

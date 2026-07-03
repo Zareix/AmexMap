@@ -1,5 +1,4 @@
 import MapKit
-import SwiftData
 import SwiftUI
 
 struct AddMerchantSheet: View {
@@ -11,9 +10,10 @@ struct AddMerchantSheet: View {
     let source: Source
 
     @Environment(\.dismiss) private var dismiss
-    @Environment(\.modelContext) private var modelContext
+    @Environment(MerchantStore.self) private var store
     @State private var merchantName: String?
     @State private var isAccepted = true
+    @State private var isSaving = false
     @State private var fetchedData: (identifier: String, address: String, coordinate: CLLocationCoordinate2D, category: String?)?
 
     var body: some View {
@@ -62,42 +62,46 @@ struct AddMerchantSheet: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button {
-                        if let data = fetchedData {
-                            let identifier = data.identifier
-                            let descriptor = FetchDescriptor<Merchant>(
-                                predicate: #Predicate { $0.mapItemIdentifier == identifier }
-                            )
-                            if let existing = try? modelContext.fetch(descriptor).first {
-                                existing.name = merchantName ?? ""
-                                existing.address = data.address
-                                existing.latitude = data.coordinate.latitude
-                                existing.longitude = data.coordinate.longitude
-                                existing.pointOfInterestCategory = data.category
-                                existing.isAccepted = isAccepted
-                            } else {
-                                modelContext.insert(Merchant(
-                                    identifier: data.identifier,
-                                    name: merchantName ?? "",
-                                    address: data.address,
-                                    latitude: data.coordinate.latitude,
-                                    longitude: data.coordinate.longitude,
-                                    category: data.category,
-                                    isAccepted: isAccepted
-                                ))
+                        guard let data = fetchedData else { return }
+                        isSaving = true
+                        Task {
+                            await store.save(Merchant(
+                                identifier: data.identifier,
+                                name: merchantName ?? "",
+                                address: data.address,
+                                latitude: data.coordinate.latitude,
+                                longitude: data.coordinate.longitude,
+                                category: data.category,
+                                isAccepted: isAccepted
+                            ))
+                            isSaving = false
+                            if store.lastErrorMessage == nil {
+                                dismiss()
                             }
                         }
-                        dismiss()
                     } label: {
-                        Image(systemName: "checkmark")
+                        if isSaving {
+                            ProgressView()
+                        } else {
+                            Image(systemName: "checkmark")
+                        }
                     }
                     .buttonStyle(.borderedProminent)
-                    .disabled(fetchedData == nil)
+                    .disabled(fetchedData == nil || isSaving)
                 }
             }
         }
         .presentationDetents([.height(170)])
         .presentationDragIndicator(.hidden)
         .presentationCompactAdaptation(.none)
+        .alert("Something went wrong", isPresented: Binding(
+            get: { store.lastErrorMessage != nil },
+            set: { if !$0 { store.lastErrorMessage = nil } }
+        )) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(store.lastErrorMessage ?? "")
+        }
         .task {
             let item: MKMapItem?
             switch source {
@@ -142,5 +146,5 @@ private extension AddMerchantSheet {
         .sheet(isPresented: .constant(true)) {
             AddMerchantSheet(preview: ())
         }
-        .modelContainer(for: Merchant.self, inMemory: true)
+        .environment(MerchantStore.preview())
 }

@@ -1,9 +1,10 @@
+import CloudKit
 import Foundation
 import MapKit
-import SwiftData
+import Observation
 import SwiftUI
 
-@Model
+@Observable
 final class Merchant {
     var mapItemIdentifier: String = ""
     var name: String = ""
@@ -37,6 +38,60 @@ final class Merchant {
         self.isAccepted = isAccepted
     }
 }
+
+extension Merchant: Identifiable {
+    var id: String {
+        mapItemIdentifier
+    }
+}
+
+extension Merchant: Equatable {
+    static func == (lhs: Merchant, rhs: Merchant) -> Bool {
+        lhs.mapItemIdentifier == rhs.mapItemIdentifier
+    }
+}
+
+// MARK: - CloudKit
+
+extension Merchant {
+    static let recordType = "Merchant"
+
+    convenience init?(record: CKRecord) {
+        guard let name = record["name"] as? String,
+              let location = record["location"] as? CLLocation else { return nil }
+        self.init(
+            identifier: record.recordID.recordName,
+            name: name,
+            address: record["address"] as? String ?? "",
+            latitude: location.coordinate.latitude,
+            longitude: location.coordinate.longitude,
+            category: record["pointOfInterestCategory"] as? String,
+            isAccepted: (record["isAccepted"] as? Int64 ?? 1) == 1
+        )
+    }
+
+    func apply(to record: CKRecord) {
+        record["mapItemIdentifier"] = mapItemIdentifier
+        record["name"] = name
+        record["address"] = address
+        record["location"] = CLLocation(latitude: latitude, longitude: longitude)
+        record["pointOfInterestCategory"] = pointOfInterestCategory
+        record["isAccepted"] = (isAccepted ? 1 : 0) as CKRecordValue
+    }
+
+    func update(from record: CKRecord) {
+        name = record["name"] as? String ?? name
+        address = record["address"] as? String ?? address
+        if let location = record["location"] as? CLLocation {
+            latitude = location.coordinate.latitude
+            longitude = location.coordinate.longitude
+        }
+        pointOfInterestCategory = record["pointOfInterestCategory"] as? String
+        isAccepted = (record["isAccepted"] as? Int64 ?? (isAccepted ? 1 : 0)) == 1
+    }
+}
+
+// MARK: - Mapping
 
 extension MKPointOfInterestCategory {
     var sfSymbol: String {

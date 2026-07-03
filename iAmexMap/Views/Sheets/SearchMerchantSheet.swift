@@ -1,5 +1,4 @@
 import MapKit
-import SwiftData
 import SwiftUI
 
 private struct PendingItem: Identifiable {
@@ -45,7 +44,8 @@ private struct MerchantRow: View {
 struct SearchMerchantSheet: View {
     var onSelectSaved: ((Merchant) -> Void)?
 
-    @Query private var savedMerchants: [Merchant]
+    @Environment(MerchantStore.self) private var store
+    private var savedMerchants: [Merchant] { store.merchants }
     @State private var query = ""
     @State private var results: [MKMapItem] = []
     @State private var isSearching = false
@@ -71,6 +71,9 @@ struct SearchMerchantSheet: View {
                     Section("Saved") {
                         ForEach(filteredSaved) { merchant in
                             Button {
+                                query = ""
+                                results = []
+                                selectedDetent = .height(70)
                                 onSelectSaved?(merchant)
                             } label: {
                                 MerchantRow(
@@ -163,5 +166,5 @@ struct SearchMerchantSheet: View {
         .sheet(isPresented: $showSheet) {
             SearchMerchantSheet()
         }
-        .modelContainer(for: Merchant.self, inMemory: true)
+        .environment(MerchantStore.preview())
 }
